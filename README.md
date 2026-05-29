@@ -9,7 +9,7 @@ You will need to get a tenancy with GPUs attached to it. Once you have done that
 
 ### 1. Obtain tenancy and GPU IDs.
 
-### 2. Modify `inference-host/variables.tf` to suit your environment.
+### 2. Modify `config.yaml` to suit your environment.
 
 Some things to note:
 

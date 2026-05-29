@@ -1,0 +1,6 @@
+# Download by going to the rancher UI -> Virtualization Management -> ... -> Download kubeconfig
+kubeconfig_path: "sl-g01.yaml"
+img_display_name: "almalinux_9.7"
+username: # REPLACE ME
+keyname: # REPLACE ME, create personal ssh key on the rancher cluster
+vm_count: 1

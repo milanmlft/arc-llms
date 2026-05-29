@@ -1,19 +1,7 @@
-variable img_display_name {
-  type = string
-  default = "almalinux_9.7"
+variable "config_path" {
+  type        = string
+  description = "Path to config YAML file"
+  sensitive   = false
+  default     = "config.yaml"
 }
 
-variable username {
-  type = string
-  default = "uccaoke"
-}
-
-variable keyname {
-  type = string
-  default = "uccaoke-cnc"
-}
-
-variable vm_count {
-  type    = number
-  default = 3
-}

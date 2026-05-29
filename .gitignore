@@ -1,3 +1,12 @@
+# config
+config.yaml
+sl-g01.yaml
+
+# terraform
+.terraform/
+*.tfstate*
+*.tfvars
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

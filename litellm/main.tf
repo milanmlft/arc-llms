@@ -1,16 +1,16 @@
 # Interpret namespace and network name based on user name
 locals {
-  namespace = "arc-llm-ns"
+  namespace    = "arc-llm-ns"
   network_name = "arc-llm-ns/default"
 }
 
 data "harvester_image" "img" {
-  display_name = var.img_display_name
+  display_name = local.img_display_name
   namespace    = "arc-llm-ns"
 }
 
 data "harvester_ssh_key" "mysshkey" {
-  name      = var.keyname
+  name      = local.keyname
   namespace = local.namespace
 }
 
@@ -23,15 +23,15 @@ resource "harvester_cloudinit_secret" "cloud-config" {
   namespace = local.namespace
 
   user_data = templatefile("cloud-init.tmpl.yml", {
-      public_key_openssh = data.harvester_ssh_key.mysshkey.public_key
-    })
+    public_key_openssh = data.harvester_ssh_key.mysshkey.public_key
+  })
 }
 
 resource "harvester_virtualmachine" "vm" {
-  
-  count = var.vm_count
 
-  name                 = "${var.username}-litellm-${format("%02d", count.index + 1)}-${random_id.secret.hex}"
+  count = local.vm_count
+
+  name                 = "${local.username}-litellm-${format("%02d", count.index + 1)}-${random_id.secret.hex}"
   namespace            = local.namespace
   restart_after_update = true
 
@@ -44,7 +44,7 @@ resource "harvester_virtualmachine" "vm" {
   secure_boot = true
 
   run_strategy    = "RerunOnFailure"
-  hostname        = "${var.username}-litellm-${format("%02d", count.index + 1)}-${random_id.secret.hex}"
+  hostname        = "${local.username}-litellm-${format("%02d", count.index + 1)}-${random_id.secret.hex}"
   reserved_memory = "100Mi"
   machine_type    = "q35"
 
@@ -71,9 +71,9 @@ resource "harvester_virtualmachine" "vm" {
   }
 
   tags = {
-    condenser_ingress_isEnabled = true
+    condenser_ingress_isEnabled      = true
     condenser_ingress_endpt_hostname = "litellm"
-    condenser_ingress_endpt_port = 4000
+    condenser_ingress_endpt_port     = 4000
     condenser_ingress_endpt_protocol = "http"
   }
 
