@@ -1,9 +1,5 @@
 services:
   litellm:
-    build:
-      context: .
-      args:
-        target: runtime
     image: docker.litellm.ai/berriai/litellm:main-stable
     container_name: litellm
     restart: always
@@ -12,22 +8,21 @@ services:
     command:
      - "--config=/app/config.yaml"
     ports:
-      - "4000:4000" # Map the container port to the host, change the host port if necessary
+      - "4000:4000"
     environment:
-      DATABASE_URL: "postgresql://llmproxy:{{lookup('ansible.builtin.password', './.pgpass', length=16), chars=['ascii_letters', 'digits'] }}@db:5432/litellm"
-      STORE_MODEL_IN_DB: "True" # allows adding models to proxy via UI
+      DATABASE_URL: "postgresql://llmproxy:{{ lookup('ansible.builtin.password', './.pgpass', length=16, chars=['ascii_letters', 'digits']) }}@db:5432/litellm"
+      STORE_MODEL_IN_DB: "True"
     env_file:
-      - .env # Load local .env file
+      - .env
     depends_on:
-      - db  # Indicates that this service depends on the 'db' service, ensuring 'db' starts first
-    healthcheck:  # Defines the health check configuration for the container
-      test:
-        - CMD-SHELL
-        - python3 -c "import urllib.request; urllib.request.urlopen('http://localhost:4000/health/liveliness')"  # Command to execute for health check
-      interval: 30s  # Perform health check every 30 seconds
-      timeout: 10s   # Health check command times out after 10 seconds
-      retries: 3     # Retry up to 3 times if health check fails
-      start_period: 40s  # Wait 40 seconds after container start before beginning health checks
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:4000/health/liveliness"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     logging:
       driver: json-file
       options:
@@ -36,16 +31,14 @@ services:
 
   db:
     image: postgres:16
-    restart: always
     container_name: litellm_db
+    restart: always
     environment:
       POSTGRES_DB: litellm
       POSTGRES_USER: llmproxy
-      POSTGRES_PASSWORD: {{lookup('ansible.builtin.password', './.pgpass', length=16, chars=['ascii_letters', 'digits'] ) }}
-    ports:
-      - "5432:5432"
+      POSTGRES_PASSWORD: "{{ lookup('ansible.builtin.password', './.pgpass', length=16, chars=['ascii_letters', 'digits']) }}"
     volumes:
-      - postgres_data:/var/lib/postgresql/data # Persists Postgres data across container restarts
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d litellm -U llmproxy"]
       interval: 1s
@@ -59,4 +52,4 @@ services:
 
 volumes:
   postgres_data:
-    name: litellm_postgres_data # Named volume for Postgres data persistence
+    name: litellm_postgres_data
