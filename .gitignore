@@ -2,6 +2,12 @@
 config.yaml
 sl-g01.yaml
 
+# Generated secrets (Ansible password lookup outputs)
+.master
+.salt
+.pgpass
+.apikey*
+
 # terraform
 .terraform/
 *.tfstate*
