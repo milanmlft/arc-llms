@@ -1,4 +1,3 @@
 ---
-- import_tasks: local.yaml
 - import_tasks: update.yaml
 - import_tasks: tools.yaml

@@ -4,5 +4,4 @@
   - common
   - docker
   - reboot
-  - python312
   - litellm
