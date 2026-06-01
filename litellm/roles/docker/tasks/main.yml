@@ -40,3 +40,6 @@
     name: almalinux
   become: true
   become_user: root
+
+- name: Reset SSH connection so the docker group takes effect immediately
+  ansible.builtin.meta: reset_connection

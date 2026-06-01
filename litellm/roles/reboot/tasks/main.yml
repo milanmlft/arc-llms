@@ -1,4 +1,13 @@
-- name: Reboot
-  reboot:
+- name: Check whether a reboot is required
+  ansible.builtin.command: dnf needs-restarting -r
+  register: needs_restarting
+  changed_when: false
+  failed_when: needs_restarting.rc not in [0, 1]
+  become: true
+  become_user: root
+
+- name: Reboot if dnf flagged a pending restart
+  ansible.builtin.reboot:
+  when: needs_restarting.rc == 1
   become: true
   become_user: root
