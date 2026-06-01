@@ -1,62 +1,57 @@
 #!/usr/bin/env python3
+"""Ansible dynamic inventory built from Terraform output."""
 
+import argparse
 import json
 import subprocess
-import argparse
 
-def run(command):
-    return subprocess.run(command, capture_output=True, encoding='UTF-8')
+
+def terraform_output(name):
+    result = subprocess.run(
+        ["terraform", "output", "--json", name],
+        capture_output=True,
+        encoding="UTF-8",
+        check=True,
+    )
+    return json.loads(result.stdout)
+
 
 def generate_inventory():
-    command = "terraform output --json vm_ips".split()
-    ip_data = json.loads(run(command).stdout)
+    names = terraform_output("vm_names")
+    ips = terraform_output("vm_ips")
 
-    host_vars = {}
+    hostvars = {}
+    for name, ip in zip(names, ips):
+        hostvars[name] = {
+            "ansible_host": ip,
+            "ansible_user": "almalinux",
+        }
 
-
-    counter = 0
-    workers = []
-
-    for a in ip_data:
-        name = a
-        host_vars[name] = { "ip": [a] }
-        workers.append(name)
-        counter += 1
-
-    _meta = {}
-    _meta["hostvars"] = host_vars
-    _all = { "children": ["workers"] }
-
-    _workers = { "hosts": workers }
-
-    _jd = {}
-    _jd["_meta"] = _meta
-    _jd["all"] = _all
-    _jd["workers"] = _workers
-
-    jd = json.dumps(_jd, indent=4)
-    return jd
+    return {
+        "_meta": {"hostvars": hostvars},
+        "all": {"children": ["workers"]},
+        "workers": {
+            "hosts": list(names),
+            "vars": {
+                "ansible_ssh_common_args": "-o ProxyJump=condenser",
+            },
+        },
+    }
 
 
 if __name__ == "__main__":
-
     ap = argparse.ArgumentParser(
-        description = "Generate an inventory from Terraform.",
-        prog = __file__
+        description="Generate an Ansible inventory from Terraform outputs.",
+        prog=__file__,
     )
-
     mo = ap.add_mutually_exclusive_group()
-    mo.add_argument("--list",action="store", nargs="*", default="dummy", help="Show JSON of all managed hosts")
-    mo.add_argument("--host",action="store", help="Display vars related to the host")
-
+    mo.add_argument(
+        "--list", action="store_true", help="Show JSON of all managed hosts"
+    )
+    mo.add_argument("--host", action="store", help="Display vars related to the host")
     args = ap.parse_args()
 
     if args.host:
         print(json.dumps({}))
-    elif len(args.list) >= 0:
-        jd = generate_inventory()
-        print(jd)
     else:
-        raise ValueError("Expecting either --host $HOSTNAME or --list")
-
-    
+        print(json.dumps(generate_inventory(), indent=4))
