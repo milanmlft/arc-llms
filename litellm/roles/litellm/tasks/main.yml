@@ -1,19 +1,38 @@
-- name: Create directory
+- name: Create setup directory
   ansible.builtin.file:
     path: /home/almalinux/litellm_setup
     state: directory
-- name: Docker compose file
+    owner: almalinux
+    group: almalinux
+    mode: "0755"
+
+- name: Render docker-compose.yml
   ansible.builtin.template:
+    src: docker-compose.yml.j2
     dest: /home/almalinux/litellm_setup/docker-compose.yml
-    src: templates/docker-compose.yml.j2
-- name: Env file
+    owner: almalinux
+    group: almalinux
+    mode: "0644"
+  notify: Reapply litellm compose project
+
+- name: Render .env
   ansible.builtin.template:
+    src: env.j2
     dest: /home/almalinux/litellm_setup/.env
-    src: templates/env.j2
-- name: Litellm config file
+    owner: almalinux
+    group: almalinux
+    mode: "0600"
+  notify: Recreate litellm container
+
+- name: Render LiteLLM config
   ansible.builtin.template:
+    src: config.yaml.j2
     dest: /home/almalinux/litellm_setup/config.yaml
-    src: templates/config.yaml.j2
+    owner: almalinux
+    group: almalinux
+    mode: "0644"
+  notify: Recreate litellm container
+
 - name: Start LiteLLM with Docker compose
   ansible.builtin.command:
     cmd: docker compose up -d
