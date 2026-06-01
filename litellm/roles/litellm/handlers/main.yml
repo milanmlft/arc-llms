@@ -1,0 +1,9 @@
+- name: Reapply litellm compose project
+  ansible.builtin.command:
+    cmd: docker compose up -d
+    chdir: /home/almalinux/litellm_setup
+
+- name: Recreate litellm container
+  ansible.builtin.command:
+    cmd: docker compose up -d --force-recreate litellm
+    chdir: /home/almalinux/litellm_setup
