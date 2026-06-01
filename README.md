@@ -5,6 +5,39 @@ This is a slightly involved process.
 
 You will need to get a tenancy with GPUs attached to it. Once you have done that, there is terraform code in `inference-host` which will build your VMs. Having created the VMs, you need to use `attach_gpu.py` to attach a GPU to each VM, **RESTART NOT REBOOT** the VMs so that they migrate to the right machine and then use ansible to install the base environment. Finally, you need to use the appropriate roles to install the right containers and set them to run as daemons.
 
+## Prerequisites
+
+### SSH access via Condenser
+
+VMs created by the Terraform stacks here live on the Harvester bridge network and are reached over SSH **via the Condenser jump host** (see [Condenser SSH docs](https://condenser.arc.ucl.ac.uk/documentation/ssh_login/)). Add the Condenser jump host to your `~/.ssh/config` (aliased `condenser`) here:
+
+```ssh-config
+Host condenser
+    HostName ssh.condenser.arc.ucl.ac.uk
+    User cloud-user
+    CertificateFile ~/.ssh/<path to signed certificate>
+    IdentityFile ~/.ssh/<path to your private ssh key>
+```
+
+(The certificate is obtained from <https://ssh.condenser.arc.ucl.ac.uk>.)
+
+Verify the jump host works before going further:
+
+```sh
+ssh condenser true
+```
+
+Register the public half of your ssh key on the `sl-g01` cluster through the Rancher UI (`Advanced > SSH Keys`) and add its name as `keyname` in your local `config.yaml`.
+
+To reach a VM directly, pass `-J condenser` and use the `almalinux` user with the VM IP from Terraform:
+
+```sh
+terraform -chdir=litellm output -raw vm_ips     # grab a VM IP from a deployed stack
+ssh -J condenser almalinux@<vm-ip> uptime
+```
+
+**For Ansible**, the `litellm/` stack's `generate_inventory.py` already sets `ansible_ssh_common_args: "-o ProxyJump=condenser"` on the inventory group, so `ansible-playbook -i generate_inventory.py full.yaml` from that directory routes through Condenser automatically. For the `inference-host/` and `openwebui/` stacks, pass it explicitly: `ansible-playbook -i generate_inventory.py --ssh-common-args='-o ProxyJump=condenser' full.yaml`. This assumes you have aliased the condenser bastion as `condenser` in your `~/.ssh/config`.
+
 ## Walkthrough
 
 ### 1. Obtain tenancy and GPU IDs.
