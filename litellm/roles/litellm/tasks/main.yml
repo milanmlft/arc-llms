@@ -15,4 +15,11 @@
     dest: /home/almalinux/litellm_setup/config.yaml
     src: templates/config.yaml.j2
 - name: Start LiteLLM with Docker compose
-  ansible.building.shell: "cd /home/almalinux/litellm_setup; docker compose -d up"
+  ansible.builtin.command:
+    cmd: docker compose up -d
+    chdir: /home/almalinux/litellm_setup
+  register: compose_up
+  changed_when: >-
+    'Started' in compose_up.stderr
+    or 'Created' in compose_up.stderr
+    or 'Recreated' in compose_up.stderr
